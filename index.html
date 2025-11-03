@@ -1,99 +1,399 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>সাধারণ জ্ঞান — প্রশ্নব্যাংক</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<style>
-body { background-color:#fafafa; font-family:"Noto Sans Bengali", sans-serif; }
-.question-card { border:1px solid #e3e3e3; border-radius:6px; padding:12px 16px; margin-bottom:10px; background:#fff; }
-.option { display:flex; align-items:center; gap:10px; border:1px solid transparent; padding:6px 8px; border-radius:5px; cursor:pointer; transition:0.2s; }
-.option:hover { background-color: rgba(0,123,255,0.05); }
-.option.disabled { pointer-events:none; opacity:.8; }
-.circle { width:28px; height:28px; border-radius:50%; border:1px solid #888; display:flex; justify-content:center; align-items:center; font-weight:600; color:#444; flex-shrink:0; }
-.correct { border-color:#198754; background-color:rgba(25,135,84,0.08); color:#198754; }
-.wrong { border-color:#dc3545; background-color:rgba(220,53,69,0.08); color:#dc3545; }
-.answer, .explanation { display:none; margin-top:6px; }
-.answer { font-weight:600; color:#198754; }
-.explanation { font-style:italic; color:#555; }
-.pagination { margin-top:10px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>সাম্প্রতিক পরীক্ষা অ্যাপ</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .exam-container {
+            max-width: 700px;
+            margin: 2rem auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .list-group-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-radius: 8px !important;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+        }
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+        }
+        .list-group-item.selected {
+            background-color: #e0f3ff;
+            border-color: #0d6efd;
+            font-weight: 500;
+        }
+        /* ফলাফল দেখানোর জন্য স্টাইল */
+        .list-group-item.correct {
+            background-color: #d1e7dd;
+            border-color: #198754;
+        }
+        .list-group-item.incorrect {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+        }
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+        }
+        .btn-lg {
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+            border-radius: 8px;
+        }
+        #result-screen h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+    </style>
 </head>
 <body>
-<div class="container py-3">
-  <h5 class="text-center mb-3">সাধারণ জ্ঞান — প্রশ্নব্যাংক</h5>
-  <div id="quiz-container"></div>
-  <ul class="pagination justify-content-center" id="pager"></ul>
-</div>
 
-<script>
-const PAGE_SIZE = 10;
-const letters = ["ক","খ","গ","ঘ"];
-let questionsData = [];
-let answeredCount = 0, batchAnswers = [];
+    <div class="container my-4">
+        <div class="col-lg-8 col-md-10 mx-auto">
+            
+            <!-- Start Screen -->
+            <div id="start-screen" class="card exam-container text-center p-4 p-md-5">
+                <h1 class="h2 mb-3">সাম্প্রতিক ক্যাপসুল-১</h1>
+                <p class="text-muted mb-4">আপনার প্রস্তুতি যাচাই করুন। এই পরীক্ষায় ২০টি প্রশ্ন রয়েছে।</p>
+                <button id="start-btn" class="btn btn-primary btn-lg">পরীক্ষা শুরু করুন</button>
+            </div>
 
-// Load quiz JSON from API or fallback to local GitHub-hosted file
-async function loadQuizData(){
-  try {
-    const res = await fetch('data.json'); // GitHub Pages friendly
-    questionsData = await res.json();
-    renderPage();
-  } catch(e) {
-    console.error('Could not load quiz data', e);
-    document.getElementById('quiz-container').innerHTML = '<p class="text-center text-danger">কুইজ ডেটা লোড করা যায়নি।</p>';
-  }
-}
+            <!-- Exam Screen -->
+            <div id="exam-screen" class="card exam-container p-4 p-md-5" style="display: none;">
+                <!-- Progress Bar -->
+                <div class="mb-3">
+                    <small id="progress-text" class="text-muted">প্রশ্ন ১/২০</small>
+                    <div class="progress mt-1" role="progressbar">
+                        <div id="progress-bar" class="progress-bar" style="width: 5%;"></div>
+                    </div>
+                </div>
+                
+                <!-- Question -->
+                <h5 id="question-text" class="mb-4" style="font-weight: 600;">প্রশ্ন এখানে লোড হবে...</h5>
+                
+                <!-- Options -->
+                <div id="options-container" class="list-group">
+                    <!-- Options will be dynamically inserted here -->
+                </div>
+                
+                <!-- Navigation -->
+                <div class="d-flex justify-content-between mt-4">
+                    <button id="prev-btn" class="btn btn-outline-secondary btn-lg" style="display: none;">পূর্ববর্তী</button>
+                    <button id="next-btn" class="btn btn-primary btn-lg ms-auto">পরবর্তী</button>
+                </div>
+            </div>
 
-function renderPage(page=1){
-  const container = document.getElementById("quiz-container");
-  container.innerHTML = "";
-  const start=(page-1)*PAGE_SIZE, end=Math.min(start+PAGE_SIZE, questionsData.length);
+            <!-- Result Screen -->
+            <div id="result-screen" class="card exam-container text-center p-4 p-md-5" style="display: none;">
+                <h1 class="h2 mb-3">পরীক্ষা সম্পন্ন!</h1>
+                <p class="lead mb-3">আপনার স্কোর:</p>
+                <h2 id="score-text" class="mb-4 text-primary">২০/২০</h2>
+                <p id="score-details" class="text-muted mb-4">আপনি ২০টি প্রশ্নের মধ্যে ২০টি সঠিক উত্তর দিয়েছেন।</p>
+                <button id="restart-btn" class="btn btn-primary btn-lg mb-3">আবার চেষ্টা করুন</button>
+                <button id="review-btn" class="btn btn-outline-secondary btn-lg">উত্তর দেখুন</button>
+            </div>
 
-  for(let i=start;i<end;i++){
-    const q=questionsData[i];
-    const card=document.createElement("div"); card.className="question-card";
-    const qText=document.createElement("div"); qText.innerHTML=`<strong>${q.id}. ${q.question}</strong>`;
-    card.appendChild(qText);
+            <!-- Review Screen -->
+            <div id="review-screen" class="card exam-container p-4 p-md-5" style="display: none;">
+                <h1 class="h4 mb-4 text-center">সঠিক উত্তরসমূহ</h1>
+                <div id="review-container">
+                    <!-- Review content will be dynamically inserted here -->
+                </div>
+                <div class="text-center mt-4">
+                    <button id="back-to-result-btn" class="btn btn-primary btn-lg">ফলাফলে ফিরে যান</button>
+                </div>
+            </div>
 
-    (q.options instanceof Array ? q.options : q.options.split(',')).forEach((opt,idx)=>{
-      const optDiv=document.createElement("div"); optDiv.className="option";
-      optDiv.innerHTML=`<div class="circle">${letters[idx]}</div><div>${opt}</div>`;
-      optDiv.addEventListener("click", ()=>{
-        if(optDiv.classList.contains("disabled")) return;
-        optDiv.parentElement.querySelectorAll(".option").forEach(o=>o.classList.add("disabled"));
-        answeredCount++; batchAnswers.push(card);
-        if(opt.trim()===q.answer.trim()) optDiv.classList.add("correct");
-        else optDiv.classList.add("wrong");
-        if(answeredCount%1===0 || answeredCount===questionsData.length){
-          batchAnswers.forEach(b=>{
-            b.querySelector(".answer").style.display="block";
-            b.querySelector(".explanation").style.display="block";
-          });
-          batchAnswers=[];
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const questions = [
+            {
+                question: "জাতিসংঘ সাধারণ পরিষদের ৮০তম অধিবেশনের সভাপতি কে?",
+                options: ["ড. মুহাম্মদ ইউনূস", "আনালেনা বায়েরবোক", "লুইজ ইনাসিও লুলা দা সিলভা", "ডোনাল্ড ট্রাম্প"],
+                answer: 1 // index of the correct option
+            },
+            {
+                question: "ড. মুহাম্মদ ইউনূস জাতিসংঘ সাধারণ পরিষদে মোট কতবার ভাষণ প্রদান করেন?",
+                options: ["১ বার", "২ বার", "৩ বার", "৪ বার"],
+                answer: 1
+            },
+            {
+                question: "প্রথা অনুযায়ী জাতিসংঘের সাধারণ পরিষদে কোন দেশ প্রথম বক্তব্য দেয়?",
+                options: ["যুক্তরাষ্ট্র", "জার্মানি", "ব্রাজিল", "স্বাগতিক দেশ"],
+                answer: 2
+            },
+            {
+                question: "প্রধান উপদেষ্টা ড. মুহাম্মদ ইউনূস কোন দেশ সফরকালে 'কিং চার্লস হারমনি অ্যাওয়ার্ড ২০২৫' লাভ করেন?",
+                options: ["চীন", "জাপান", "যুক্তরাজ্য", "মালয়েশিয়া"],
+                answer: 2
+            },
+            {
+                question: "প্রাচ্যের দাভোস খ্যাত 'Boao Forum for Asia (BFA)' কোন দেশে অনুষ্ঠিত হয়?",
+                options: ["চীন", "জাপান", "মালয়েশিয়া", "যুক্তরাজ্য"],
+                answer: 0
+            },
+            {
+                question: "ডাকসু নির্বাচন-২০২৫ এ সহ-সভাপতি (ভিপি) কে নির্বাচিত হন?",
+                options: ["এস এম ফরহাদ", "নুরুল হক নুর", "মো. আবু সাদিক (সাদিক কায়েম)", "আ. স. ম. আবদুর রব"],
+                answer: 2
+            },
+            {
+                question: "'বাংলাদেশের দ্বিতীয় সংসদ' বলা হয় কোনটিকে?",
+                options: ["জাতীয় সংসদকে", "গণপরিষদকে", "ডাকসুকে", "বোয়াও ফোরামকে"],
+                answer: 2
+            },
+            {
+                question: "ডাকসু'র প্রথম নারী ভিপি কে ছিলেন?",
+                options: ["মাহফুজা খানম", "সুশীলা কার্কি", "আনালেনা বায়েরবোক", "বেগম জাহানারা আক্তার"],
+                answer: 3
+            },
+            {
+                question: "'পূর্ববাঙলার ভাষা আন্দোলন ও তৎকালীন রাজনীতি' গবেষণা গ্রন্থটির লেখক কে?",
+                options: ["যতীন সরকার", "আবুল হাশিম", "বদরুদ্দীন উমর", "হামিদুজ্জামান খান"],
+                answer: 2
+            },
+            {
+                question: "বাংলাদেশ এশিয়াটিক সোসাইটির প্রথম নারী সভাপতি কে ছিলেন?",
+                options: ["মাহফুজা খানম", "বেগম জাহানারা আক্তার", "সুশীলা কার্কি", "জাহানারা ইমাম"],
+                answer: 0
+            },
+            {
+                question: "জাহাঙ্গীরনগর বিশ্ববিদ্যালয়ে অবস্থিত 'সংশপ্তক' ভাস্কর্যটির স্থপতি কে?",
+                options: ["আব্দুর রাজ্জাক", "হামিদুজ্জামান খান", "যতীন সরকার", "শামিম শিকদার"],
+                answer: 1
+            },
+            {
+                question: "বাংলাদেশের প্রথম ভাস্কর্য পার্ক 'প্রফেসর হামিদুজ্জামান ভাস্কর্য পার্ক' কোথায় অবস্থিত?",
+                options: ["টিএসসি, ঢাকা বিশ্ববিদ্যালয়", "জয়দেবপুর চৌরাস্তা", "গাজীপুরের কালিয়াকৈর", "কিশোরগঞ্জ"],
+                answer: 2
+            },
+            {
+                question: "পোপ চতুর্দশ লিও কোন দেশের নাগরিক?",
+                options: ["আর্জেন্টিনা", "ভ্যাটিকান সিটি", "ইতালি", "যুক্তরাষ্ট্র"],
+                answer: 3
+            },
+            {
+                question: "'স্বর্ণদ্বীপ'-এর পূর্বনাম কী ছিল?",
+                options: ["সবুজ চর", "ঠেঙ্গারচর", "জালিয়ারচর", "জাহাইজ্জার চর"],
+                answer: 3
+            },
+            {
+                question: "নেপালের জেন-জি আন্দোলন ২০২৫-এর ফলে কোন প্রধানমন্ত্রী পদত্যাগ করেন?",
+                options: ["সুশীলা কার্কি", "সুদান গুরং", "কে পি শর্মা অলি", "রবার্ট ফ্রান্সিস প্রিভোস্ট"],
+                answer: 2
+            },
+            {
+                question: "নেপালের প্রথম নারী প্রধানমন্ত্রী ও প্রথম নারী বিচারপতি কে?",
+                options: ["আনালেনা বায়েরবোক", "মাহফুজা খানম", "সুশীলা কার্কি", "বেগম জাহানারা আক্তার"],
+                answer: 2
+            },
+            {
+                question: "কালাপানি, লিপুলেখ ও লিমপিয়াধুরা স্থান তিনটি কোন দুই দেশের মধ্যে সীমান্ত বিরোধের কেন্দ্র?",
+                options: ["নেপাল-চীন", "নেপাল-ভারত", "ভারত-পাকিস্তান", "আর্মেনিয়া-আজারবাইজান"],
+                answer: 1
+            },
+            {
+                question: "আর্মেনিয়া ও আজারবাইজানের মধ্যে 'ট্রাম্প করিডোর' স্থাপনে মধ্যস্থতাকারী কে ছিলেন?",
+                options: ["ভ্লাদিমির পুতিন", "ডোনাল্ড ট্রাম্প", "তামিম বিন হামাদ", "জো বাইডেন"],
+                answer: 1
+            },
+            {
+                question: "ইরান-ইসরায়েল ১২ দিনের যুদ্ধে, ইসরায়েল পরিচালিত অভিযানের নাম কী ছিল?",
+                options: ["অপারেশন ট্রু প্রমিজ-৩", "অপারেশন মিডনাইট হ্যামার", "অপারেশন রাইজিং লায়ন", "অপারেশন জাঙ্গেজুর"],
+                answer: 2
+            },
+            {
+                question: "GBU-57, যা 'বাংকার বাস্টার' বোমা নামে পরিচিত, এটি কোন দেশ ব্যবহার করে?",
+                options: ["ইরান", "ইসরায়েল", "রাশিয়া", "যুক্তরাষ্ট্র"],
+                answer: 3
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = new Array(questions.length).fill(null);
+        let score = 0;
+
+        const startScreen = document.getElementById('start-screen');
+        const examScreen = document.getElementById('exam-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const reviewScreen = document.getElementById('review-screen');
+
+        const startBtn = document.getElementById('start-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const reviewBtn = document.getElementById('review-btn');
+        const backToResultBtn = document.getElementById('back-to-result-btn');
+
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        const scoreText = document.getElementById('score-text');
+        const scoreDetails = document.getElementById('score-details');
+        const reviewContainer = document.getElementById('review-container');
+
+        startBtn.addEventListener('click', startExam);
+        nextBtn.addEventListener('click', nextQuestion);
+        prevBtn.addEventListener('click', prevQuestion);
+        restartBtn.addEventListener('click', restartExam);
+        reviewBtn.addEventListener('click', showReview);
+        backToResultBtn.addEventListener('click', () => {
+            reviewScreen.style.display = 'none';
+            resultScreen.style.display = 'block';
+        });
+
+        function startExam() {
+            startScreen.style.display = 'none';
+            resultScreen.style.display = 'none';
+            reviewScreen.style.display = 'none';
+            examScreen.style.display = 'block';
+            currentQuestionIndex = 0;
+            userAnswers.fill(null);
+            score = 0;
+            loadQuestion(currentQuestionIndex);
         }
-      });
-      card.appendChild(optDiv);
-    });
 
-    const ans=document.createElement("div"); ans.className="answer"; ans.innerHTML=`উত্তর: ${q.answer}`;
-    const exp=document.createElement("div"); exp.className="explanation"; exp.innerHTML=q.explanation || '';
-    card.appendChild(ans); card.appendChild(exp);
-    container.appendChild(card);
-  }
+        function loadQuestion(index) {
+            const question = questions[index];
+            questionText.textContent = question.question;
+            optionsContainer.innerHTML = '';
 
-  // pagination
-  const pager=document.getElementById("pager"); pager.innerHTML="";
-  const totalPages=Math.ceil(questionsData.length/PAGE_SIZE);
-  for(let p=1;p<=totalPages;p++){
-    const li=document.createElement("li"); li.className="page-item"+(p===page?" active":"");
-    const a=document.createElement("a"); a.className="page-link"; a.textContent=p; a.href="#";
-    a.addEventListener("click",(e)=>{ e.preventDefault(); renderPage(p); });
-    li.appendChild(a); pager.appendChild(li);
-  }
-}
+            question.options.forEach((option, i) => {
+                const optionElement = document.createElement('a');
+                optionElement.href = '#';
+                optionElement.className = 'list-group-item list-group-item-action';
+                optionElement.textContent = option;
+                optionElement.addEventListener('click', (e) => {
+                    e.preventDefault(); // Prevent page jump
+                    selectOption(index, i);
+                });
+                if (userAnswers[index] === i) {
+                    optionElement.classList.add('selected');
+                }
+                optionsContainer.appendChild(optionElement);
+            });
 
-loadQuizData();
-</script>
+            updateNavigation();
+            updateProgressBar();
+        }
+
+        function selectOption(questionIndex, optionIndex) {
+            userAnswers[questionIndex] = optionIndex;
+            // Remove 'selected' from all options first
+            const options = optionsContainer.getElementsByClassName('list-group-item');
+            Array.from(options).forEach(opt => opt.classList.remove('selected'));
+            // Add 'selected' to the clicked option
+            options[optionIndex].classList.add('selected');
+        }
+
+        function updateNavigation() {
+            prevBtn.style.display = currentQuestionIndex > 0 ? 'inline-block' : 'none';
+            nextBtn.textContent = currentQuestionIndex === questions.length - 1 ? 'ফলাফল দেখুন' : 'পরবর্তী';
+        }
+
+        function updateProgressBar() {
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `প্রশ্ন ${currentQuestionIndex + 1}/${questions.length}`;
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion(currentQuestionIndex);
+            } else {
+                showResults();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion(currentQuestionIndex);
+            }
+        }
+
+        function showResults() {
+            calculateScore();
+            examScreen.style.display = 'none';
+            resultScreen.style.display = 'block';
+            scoreText.textContent = `${score}/${questions.length}`;
+            scoreDetails.textContent = `আপনি ${questions.length}টি প্রশ্নের মধ্যে ${score}টি সঠিক উত্তর দিয়েছেন।`;
+        }
+
+        function calculateScore() {
+            score = 0;
+            userAnswers.forEach((answer, index) => {
+                if (answer === questions[index].answer) {
+                    score++;
+                }
+            });
+        }
+
+        function restartExam() {
+            startScreen.style.display = 'block';
+            resultScreen.style.display = 'none';
+            reviewScreen.style.display = 'none';
+            examScreen.style.display = 'none';
+        }
+
+        function showReview() {
+            resultScreen.style.display = 'none';
+            reviewScreen.style.display = 'block';
+            reviewContainer.innerHTML = '';
+
+            questions.forEach((q, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'mb-4 p-3 border rounded-3';
+                
+                let questionTitle = document.createElement('h6');
+                questionTitle.className = 'mb-3';
+                questionTitle.textContent = `${index + 1}. ${q.question}`;
+                questionDiv.appendChild(questionTitle);
+
+                const optionsList = document.createElement('div');
+                optionsList.className = 'list-group';
+                
+                q.options.forEach((opt, i) => {
+                    const optionItem = document.createElement('div');
+                    optionItem.className = 'list-group-item';
+                    optionItem.textContent = opt;
+
+                    if (i === q.answer) {
+                        optionItem.classList.add('correct'); // Correct answer
+                    }
+                    if (userAnswers[index] === i && i !== q.answer) {
+                        optionItem.classList.add('incorrect'); // User's wrong answer
+                    }
+                    if (userAnswers[index] === i && i === q.answer) {
+                         optionItem.classList.add('correct'); // User's correct answer
+                    }
+                    optionsList.appendChild(optionItem);
+                });
+
+                questionDiv.appendChild(optionsList);
+                reviewContainer.appendChild(questionDiv);
+            });
+        }
+
+    </script>
 </body>
 </html>
+
