@@ -1,80 +1,118 @@
 <!DOCTYPE html>
 <html lang="bn">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ID, Password & University Table</title>
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Landing Page</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body class="bg-light">
+    <div class="container mt-5">
+      <h2 class="text-center mb-4">কার ইনফো দেখতে চান?</h2>
+      <!-- User Selection -->
+      <div class="d-flex justify-content-center gap-3 mb-4">
+        <button class="btn btn-primary" onclick="showUser('naeem')">Eftekhar Naeem</button>
+        <button class="btn btn-success" onclick="showUser('mithila')">Esrat Jahan Mithila</button>
+      </div>
+      <!-- Search box -->
+      <div class="mb-3">
+        <input type="text" id="searchInput" class="form-control" placeholder="ID, Password বা University দিয়ে খুঁজুন...">
+      </div>
+      <!-- Table -->
+      <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+          <thead class="table-dark">
+            <tr>
+              <th>ID / Username</th>
+              <th>Password</th>
+              <th>University</th>
+            </tr>
+          </thead>
+          <tbody id="userTable">
+            <!-- JSON থেকে ডেটা আসবে -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // দুইজন ইউজারের JSON ডেটা
+      const data = {
+        naeem: [{
+          id: "261278552",
+          pass: "LfeT7BHW",
+          university: "Rajshahi University"
+        }, {
+          id: "C-DNJT",
+          pass: "G9WX38",
+          university: "Bangladesh Maritime University"
+        }, {
+          id: "1000233",
+          pass: "37htff",
+          university: "Hajee Mohammad Danesh Science and Technology University (HSTU)"
+        }, {
+          id: "774717",
+          pass: "PASS",
+          university: "Khulna University"
+        }, {
+          id: "raj24112215",
+          pass: "7a3aehkq",
+          university: "Chittagong University"
+        }],
+        mithila: [{
+          id: "260526910",
+          pass: "Mha3BGMA",
+          university: "Rajshahi University"
+        }, {
+          id: "1013824",
+          pass: "hqhe31",
+          university: "Hajee Mohammad Danesh Science and Technology University (HSTU)"
+        }, {
+          id: "C-HBZBK",
+          pass: "GX9T5M",
+          university: "Bangladesh Maritime University"
+        }, {
+          id: "656522",
+          pass: "PASS",
+          university: "Khulna University"
+        }, {
+          id: "raj25103000",
+          pass: "8stpzpz2",
+          university: "Chittagong University"
+        }]
+      };
+      let currentUser = []; // বর্তমানে কোন ইউজারের ডেটা দেখানো হবে
+      // টেবিলে ডেটা বসানো
+      const tableBody = document.getElementById("userTable");
 
-<div class="container mt-5">
-  <h2 class="text-center mb-4">ইউজার ইনফো (ID, Password, University)</h2>
-
-  <!-- Search box -->
-  <div class="mb-3">
-    <input type="text" id="searchInput" class="form-control" placeholder="ID, Password বা University দিয়ে খুঁজুন...">
-  </div>
-
-  <!-- Table -->
-  <div class="table-responsive">
-    <table class="table table-striped table-bordered">
-      <thead class="table-dark">
-        <tr>
-          <th>ID</th>
-          <th>Password</th>
-          <th>University</th>
-        </tr>
-      </thead>
-      <tbody id="userTable">
-        <!-- JSON থেকে ডেটা আসবে -->
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-  // JSON ডেটা
-  const users = [
-    { id: "261278552", pass: "LfeT7BHW", university: "Rajshahi University" },
-    { id: "C-DNJT", pass: "G9WX38", university: "Bangladesh Maritime University" },
-    { id: "1000233", pass: "37htff", university: "HSTU" },
-    { id: "774717", pass: "PASS", university: "Khulna University" },
-    { id: "raj24112215", pass: "7a3aehkq", university: "Chittagong University" }
-  ];
-
-  // টেবিলে ডেটা বসানো
-  const tableBody = document.getElementById("userTable");
-  function renderTable(data) {
-    tableBody.innerHTML = "";
-    data.forEach(user => {
-      const row = `
-        <tr>
-          <td>${user.id}</td>
-          <td>${user.pass}</td>
-          <td>${user.university}</td>
-        </tr>
+      function renderTable(data) {
+        tableBody.innerHTML = "";
+        data.forEach(user => {
+          const row = `
+        
+							<tr>
+								<td>${user.id}</td>
+								<td>${user.pass}</td>
+								<td>${user.university}</td>
+							</tr>
       `;
-      tableBody.innerHTML += row;
-    });
-  }
-  renderTable(users);
-
-  // সার্চ ফাংশন
-  document.getElementById("searchInput").addEventListener("keyup", function() {
-    const query = this.value.toLowerCase();
-    const filtered = users.filter(user =>
-      user.id.toLowerCase().includes(query) ||
-      user.pass.toLowerCase().includes(query) ||
-      user.university.toLowerCase().includes(query)
-    );
-    renderTable(filtered);
-  });
-</script>
-
-</body>
+          tableBody.innerHTML += row;
+        });
+      }
+      // ইউজার সিলেক্ট করলে ডেটা দেখানো
+      function showUser(userKey) {
+        currentUser = data[userKey];
+        renderTable(currentUser);
+        document.getElementById("searchInput").value = ""; // সার্চ বক্স ক্লিয়ার
+      }
+      // সার্চ ফাংশন
+      document.getElementById("searchInput").addEventListener("keyup", function() {
+        const query = this.value.toLowerCase();
+        const filtered = currentUser.filter(user => user.id.toLowerCase().includes(query) || user.pass.toLowerCase().includes(query) || user.university.toLowerCase().includes(query));
+        renderTable(filtered);
+      });
+    </script>
+  </body>
 </html>
