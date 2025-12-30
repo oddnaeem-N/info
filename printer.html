@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Merger & Watermarker</title>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --success: #27ae60;
+            --bg: #f5f7fa;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 350px;
+        }
+        h2 { color: #333; margin-bottom: 1.5rem; }
+        input[type="file"] {
+            margin-bottom: 1.5rem;
+            width: 100%;
+        }
+        button {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #219150;
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>PDF Merger</h2>
+        <input type="file" id="pdf-files" multiple accept=".pdf">
+        <button onclick="processPDFs()">Merge & Watermark</button>
+        <p class="info">Watermark: "Eftekhar Naeem" (Bottom-Right)</p>
+    </div>
+
+    <script>
+        async function processPDFs() {
+            const { PDFDocument, rgb, StandardFonts } = PDFLib;
+            const fileInput = document.getElementById('pdf-files');
+            const files = fileInput.files;
+
+            if (files.length === 0) {
+                alert("Please select at least one PDF file.");
+                return;
+            }
+
+            try {
+                // 1. Create a new document
+                const mergedPdf = await PDFDocument.create();
+                const font = await mergedPdf.embedFont(StandardFonts.HelveticaBold);
+
+                // 2. Loop through uploaded files and add pages
+                for (const file of files) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await PDFDocument.load(arrayBuffer);
+                    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                    copiedPages.forEach(page => mergedPdf.addPage(page));
+                }
+
+                // 3. Add Watermark to the bottom-right of every page
+                const pages = mergedPdf.getPages();
+                const watermarkText = "Eftekhar Naeem";
+                const fontSize = 14;
+                const margin = 25;
+
+                pages.forEach(page => {
+                    const { width, height } = page.getSize();
+                    const textWidth = font.widthOfTextAtSize(watermarkText, fontSize);
+                    
+                    page.drawText(watermarkText, {
+                        x: width - textWidth - margin, // Position from right
+                        y: margin,                     // Position from bottom
+                        size: fontSize,
+                        font: font,
+                        color: rgb(0.6, 0.6, 0.6),    // Gray color
+                        opacity: 0.5,                  // Semi-transparent
+                    });
+                });
+
+                // 4. Generate and download the file
+                const pdfBytes = await mergedPdf.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = "Merged_Watermarked.pdf";
+                link.click();
+
+            } catch (error) {
+                console.error(error);
+                alert("An error occurred while processing the PDFs.");
+            }
+        }
+    </script>
+</body>
+</html>
