@@ -3,17 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Merger & Watermarker</title>
+    <title>PDF Merger Pro</title>
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
     <style>
-        :root {
-            --primary: #4a90e2;
-            --success: #27ae60;
-            --bg: #f5f7fa;
-        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f2f5;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -22,107 +17,115 @@
         }
         .card {
             background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            width: 380px;
             text-align: center;
-            width: 350px;
         }
-        h2 { color: #333; margin-bottom: 1.5rem; }
-        input[type="file"] {
-            margin-bottom: 1.5rem;
-            width: 100%;
+        h2 { color: #1a73e8; margin-bottom: 20px; }
+        input[type="file"] { margin: 15px 0; width: 100%; }
+        
+        /* Toggle Switch Style */
+        .options {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
         }
+        .switch {
+            cursor: pointer;
+            font-weight: bold;
+            color: #555;
+        }
+
         button {
-            background-color: var(--success);
+            background-color: #1a73e8;
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
+            padding: 12px;
+            border-radius: 8px;
             font-size: 16px;
-            font-weight: bold;
             cursor: pointer;
-            transition: transform 0.2s, background 0.2s;
             width: 100%;
+            transition: 0.3s;
         }
-        button:hover {
-            background-color: #219150;
-            transform: translateY(-1px);
-        }
-        button:active {
-            transform: translateY(0);
-        }
-        .info {
-            font-size: 12px;
-            color: #666;
-            margin-top: 1rem;
-        }
+        button:hover { background-color: #1557b0; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h2>PDF Merger</h2>
+        
         <input type="file" id="pdf-files" multiple accept=".pdf">
-        <button onclick="processPDFs()">Merge & Watermark</button>
-        <p class="info">Watermark: "Eftekhar Naeem" (Bottom-Right)</p>
+
+        <div class="options">
+            <input type="checkbox" id="use-watermark" checked>
+            <label for="use-watermark" class="switch">Add Watermark ("Eftekhar Naeem")</label>
+        </div>
+
+        <button onclick="processPDFs()">Merge & Download</button>
     </div>
 
     <script>
         async function processPDFs() {
             const { PDFDocument, rgb, StandardFonts } = PDFLib;
             const fileInput = document.getElementById('pdf-files');
+            const watermarkCheckbox = document.getElementById('use-watermark');
             const files = fileInput.files;
 
-            if (files.length === 0) {
-                alert("Please select at least one PDF file.");
-                return;
-            }
+            if (files.length === 0) return alert("Select at least one PDF");
 
             try {
-                // 1. Create a new document
                 const mergedPdf = await PDFDocument.create();
-                const font = await mergedPdf.embedFont(StandardFonts.HelveticaBold);
-
-                // 2. Loop through uploaded files and add pages
+                
+                // 1. Merge Process
                 for (const file of files) {
-                    const arrayBuffer = await file.arrayBuffer();
-                    const pdf = await PDFDocument.load(arrayBuffer);
-                    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-                    copiedPages.forEach(page => mergedPdf.addPage(page));
+                    const bytes = await file.arrayBuffer();
+                    const pdf = await PDFDocument.load(bytes);
+                    const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                    pages.forEach(page => mergedPdf.addPage(page));
                 }
 
-                // 3. Add Watermark to the bottom-right of every page
-                const pages = mergedPdf.getPages();
-                const watermarkText = "Eftekhar Naeem";
-                const fontSize = 14;
-                const margin = 25;
+                // 2. Conditional Watermark Logic
+                if (watermarkCheckbox.checked) {
+                    const font = await mergedPdf.embedFont(StandardFonts.HelveticaBold);
+                    const pages = mergedPdf.getPages();
+                    const text = "Eftekhar Naeem";
+                    const size = 14;
+                    const margin = 25;
 
-                pages.forEach(page => {
-                    const { width, height } = page.getSize();
-                    const textWidth = font.widthOfTextAtSize(watermarkText, fontSize);
-                    
-                    page.drawText(watermarkText, {
-                        x: width - textWidth - margin, // Position from right
-                        y: margin,                     // Position from bottom
-                        size: fontSize,
-                        font: font,
-                        color: rgb(0.6, 0.6, 0.6),    // Gray color
-                        opacity: 0.5,                  // Semi-transparent
+                    pages.forEach(page => {
+                        const { width } = page.getSize();
+                        const textWidth = font.widthOfTextAtSize(text, size);
+                        page.drawText(text, {
+                            x: width - textWidth - margin,
+                            y: margin,
+                            size: size,
+                            font: font,
+                            color: rgb(0.6, 0.6, 0.6),
+                            opacity: 0.5,
+                        });
                     });
-                });
+                }
 
-                // 4. Generate and download the file
+                // 3. Save & Download
                 const pdfBytes = await mergedPdf.save();
                 const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = "Merged_Watermarked.pdf";
-                link.click();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = watermarkCheckbox.checked ? "merged_watermarked.pdf" : "merged.pdf";
+                a.click();
 
-            } catch (error) {
-                console.error(error);
-                alert("An error occurred while processing the PDFs.");
+            } catch (err) {
+                console.error(err);
+                alert("Error processing PDFs.");
             }
         }
     </script>
