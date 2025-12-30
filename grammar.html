@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colorful Grammar Master</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 15px; }
+        .app-container { max-width: 900px; margin: auto; }
+        
+        /* টাইটেল এডিটেবল */
+        #main-app-title { text-align: center; color: #1a73e8; border: none; background: transparent; width: 100%; font-size: 32px; font-weight: bold; outline: none; margin-bottom: 10px; }
+
+        .grammar-card { background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 6px solid #2ecc71; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .topic-selector { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; margin-bottom: 15px; outline: none; }
+        
+        /* নিয়ম এডিট এরিয়া */
+        .rule-display { background: #e8f5e9; padding: 15px; border-radius: 8px; min-height: 100px; font-size: 18px; line-height: 1.6; color: #2e7d32; outline: none; }
+
+        .practice-pad { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 6px solid #1a73e8; }
+        .pad-title { font-size: 22px; font-weight: bold; color: #1a73e8; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; outline: none; }
+        
+        #practice-area { width: 100%; min-height: 300px; border: none; outline: none; font-size: 18px; line-height: 1.6; resize: none; color: #333; }
+        
+        /* প্রিন্টের সময় লুকানো টেক্সট */
+        #print-content { display: none; white-space: pre-wrap; font-size: 18px; line-height: 1.6; }
+
+        .footer-btns { display: flex; gap: 10px; margin-top: 20px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-print { background: #000; color: white; }
+        .btn-clear { background: #e74c3c; color: white; }
+        .btn-add { background: #2ecc71; color: white; margin-bottom: 10px; width: 100%; }
+
+        /* প্রিন্ট সেটিংস (রঙ ঠিক রাখার জন্য) */
+        @media print {
+            body { background: #f4f7f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .footer-btns, .btn-add, .topic-selector, h3 { display: none !important; }
+            
+            .grammar-card { background: white !important; border-left: 6px solid #2ecc71 !important; box-shadow: none !important; }
+            .rule-display { background: #e8f5e9 !important; color: #2e7d32 !important; border: none !important; }
+            .practice-pad { background: white !important; border-left: 6px solid #1a73e8 !important; box-shadow: none !important; }
+            
+            #practice-area { display: none; }
+            #print-content { display: block !important; color: #333 !important; }
+            #main-app-title { color: #1a73e8 !important; }
+            .pad-title { color: #1a73e8 !important; border-bottom: 1px solid #eee !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <input type="text" id="main-app-title" value="Grammar Helper" oninput="autoSaveAll()">
+
+    <div class="grammar-card">
+        <h3>📖 গ্রামার গাইড</h3>
+        <select id="selector" class="topic-selector" onchange="loadRule(this.value)">
+            </select>
+        
+        <div id="rule-box" class="rule-display" contenteditable="true" oninput="updateRuleData()">টপিক সিলেক্ট করে এখানে আপনার নিয়ম লিখুন...</div>
+        <button class="btn-add" style="margin-top:10px" onclick="addNewTopic()">+ নতুন টপিক যোগ করুন</button>
+    </div>
+
+    <div class="practice-pad">
+        <div class="pad-title" contenteditable="true" oninput="autoSaveAll()">📝 My Practice Pad</div>
+        <textarea id="practice-area" placeholder="এখানে প্র্যাকটিস লিখুন..." oninput="autoSaveAll()"></textarea>
+        <div id="print-content"></div>
+
+        <div class="footer-btns">
+            <button class="btn-clear" onclick="clearNotes()">সব মুছুন</button>
+            <button class="btn-print" onclick="window.print()">প্রিন্ট / PDF</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let grammarData = JSON.parse(localStorage.getItem('grammar_data')) || {
+        tense: "Tense ৩ প্রকার: Present, Past, Future...",
+        parts: "Parts of Speech ৮ প্রকার...",
+        voice: "Active: I write a letter. Passive: A letter is written by me.",
+        article: "Articles: A, An, The..."
+    };
+
+    function updateDropdown() {
+        const selector = document.getElementById('selector');
+        selector.innerHTML = '<option value="">একটি টপিক বেছে নিন...</option>';
+        for (let key in grammarData) {
+            let option = document.createElement('option');
+            option.value = key;
+            option.innerText = key.charAt(0).toUpperCase() + key.slice(1);
+            selector.appendChild(option);
+        }
+    }
+
+    function loadRule(topic) {
+        const box = document.getElementById('rule-box');
+        box.innerText = grammarData[topic] || "টপিক সিলেক্ট করলে এখানে নিয়মগুলো আসবে।";
+    }
+
+    function updateRuleData() {
+        const topic = document.getElementById('selector').value;
+        if (topic) {
+            grammarData[topic] = document.getElementById('rule-box').innerText;
+            localStorage.setItem('grammar_data', JSON.stringify(grammarData));
+        }
+    }
+
+    function addNewTopic() {
+        let name = prompt("নতুন টপিকের নাম লিখুন:");
+        if (name) {
+            let key = name.toLowerCase().replace(/\s+/g, '');
+            if (!grammarData[key]) {
+                grammarData[key] = "নতুন নিয়মের বর্ণনা এখানে লিখুন...";
+                updateDropdown();
+                document.getElementById('selector').value = key;
+                loadRule(key);
+                updateRuleData();
+            }
+        }
+    }
+
+    function autoSaveAll() {
+        localStorage.setItem('grammar_notes', document.getElementById('practice-area').value);
+        localStorage.setItem('app_title', document.getElementById('main-app-title').value);
+        document.getElementById('print-content').innerText = document.getElementById('practice-area').value;
+    }
+
+    window.onload = () => {
+        updateDropdown();
+        document.getElementById('practice-area').value = localStorage.getItem('grammar_notes') || "";
+        document.getElementById('main-app-title').value = localStorage.getItem('app_title') || "Grammar Helper";
+        document.getElementById('print-content').innerText = document.getElementById('practice-area').value;
+    };
+
+    function clearNotes() {
+        if(confirm("সব নোট মুছে ফেলতে চান?")) {
+            document.getElementById('practice-area').value = "";
+            localStorage.removeItem('grammar_notes');
+            document.getElementById('print-content').innerText = "";
+        }
+    }
+</script>
+
+</body>
+</html>
