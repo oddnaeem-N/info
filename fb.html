@@ -3,133 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHM Pro Manager</title>
+    <title>SHM CRUD Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        :root { --primary-color: #0d6efd; --header-bg: #1a237e; }
-        body { background-color: #f1f3f5; font-family: 'Segoe UI', Roboto, sans-serif; }
+        :root { --header-color: #1a237e; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .container { max-width: 1000px; padding: 15px; }
+        .table-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         
-        /* মোবাইল ফ্রেন্ডলি কন্টেইনার */
-        .container { max-width: 900px; padding: 12px; }
+        th, td { text-align: center !important; vertical-align: middle !important; padding: 12px !important; }
+        thead { background: var(--header-color); color: white; }
         
-        /* টেবিল ডিজাইন */
-        .table-card { 
-            background: white; 
-            border-radius: 15px; 
-            overflow: hidden; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-            margin-top: 10px;
-        }
+        .formula-text { font-size: 28px; color: #1a237e; font-weight: bold; display: block; }
+        mjx-container { font-size: 1.4em !important; }
+
+        .admin-section { display: none; background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #ddd; }
         
-        table { margin-bottom: 0 !important; border-collapse: collapse; width: 100%; }
-        th, td { 
-            text-align: center !important; 
-            vertical-align: middle !important; 
-            padding: 12px 8px !important;
-        }
+        /* বাটন স্টাইল */
+        .btn-action { padding: 5px 10px; font-size: 12px; border-radius: 5px; cursor: pointer; border: none; }
+        .btn-edit { background: #ffc107; color: #000; }
+        .btn-delete { background: #dc3545; color: #fff; margin-left: 5px; }
 
-        /* রঙিন হেডার */
-        thead { background-color: var(--header-bg); color: white; border: none; }
-        th { font-weight: 500; font-size: 14px; text-transform: uppercase; }
-
-        /* বড় ফন্ট সূত্র */
-        .formula-text { 
-            font-size: 30px; /* মোবাইল ও পিসিতে বড় দেখাবে */
-            color: #1a237e; 
-            font-weight: bold;
-            display: block;
-            margin: 5px 0;
-        }
-        mjx-container { font-size: 1.5em !important; }
-
-        /* ইনপুট সেকশন স্টাইল */
-        .admin-section { 
-            display: none; 
-            background: #ffffff; 
-            padding: 20px; 
-            border-radius: 15px; 
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        /* প্রিন্ট সেটিংস: ০ মার্জিন */
         @media print {
-            @page { margin: 0; }
-            body { background: white; padding: 0; margin: 0; }
             .no-print { display: none !important; }
-            .container { max-width: 100% !important; width: 100% !important; padding: 0 !important; margin: 0 !important; }
-            .table-card { border-radius: 0; box-shadow: none; padding: 0 !important; margin: 0 !important; }
-            table { border: 1px solid #000 !important; margin: 0 !important; }
-            th, td { border: 1px solid #000 !important; padding: 5px !important; color: #000 !important; }
-            thead { background: #f0f0f0 !important; color: #000 !important; }
-            .formula-text { font-size: 32px !important; }
+            .container { max-width: 100% !important; margin: 0 !important; }
+            th:last-child, td:last-child { display: none; } /* প্রিন্টে Action কলাম বাদ */
+            .formula-text { font-size: 30px !important; }
         }
-
-        /* মোবাইলে টেবিল স্ক্রল করার সুবিধা */
-        .table-responsive { border: none; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="container mt-3">
     <div class="d-flex justify-content-between align-items-center mb-3 no-print">
-        <h5 class="fw-bold text-primary m-0">SHM Formulas</h5>
+        <h4 class="fw-bold">SHM Formula Manager</h4>
         <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary btn-sm px-3" onclick="toggleAdmin()">Admin</button>
-            <button class="btn btn-primary btn-sm px-3" onclick="window.print()">Print</button>
+            <button class="btn btn-dark btn-sm" onclick="showAddPanel()">+ Add New</button>
+            <button class="btn btn-primary btn-sm" onclick="window.print()">Print</button>
         </div>
     </div>
 
     <div id="adminPanel" class="admin-section no-print">
-        <h6 class="text-secondary mb-3">নতুন সূত্র যোগ করুন</h6>
-        <div class="row g-3">
-            <div class="col-12 col-md-4">
-                <div class="form-floating">
-                    <input type="text" id="nameInput" class="form-control" placeholder="নাম">
-                    <label>বিষয়ের নাম</label>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="form-floating">
-                    <input type="text" id="formulaInput" class="form-control" placeholder="সূত্র">
-                    <label>সূত্র \(...\)</label>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="form-floating">
-                    <input type="text" id="descInput" class="form-control" placeholder="ব্যাখ্যা">
-                    <label>চিহ্ন/ব্যাখ্যা</label>
-                </div>
-            </div>
-            <div class="col-12">
-                <button class="btn btn-success w-100 py-2 fw-bold" onclick="addFormula()">SAVE FORMULA</button>
+        <h6 id="panelTitle" class="mb-3 fw-bold">নতুন সূত্র যোগ করুন</h6>
+        <input type="hidden" id="editIndex"> <div class="row g-2">
+            <div class="col-12 col-md-4"><input type="text" id="nameInput" class="form-control" placeholder="নাম"></div>
+            <div class="col-12 col-md-4"><input type="text" id="formulaInput" class="form-control" placeholder="সূত্র \(...\)"></div>
+            <div class="col-12 col-md-4"><input type="text" id="descInput" class="form-control" placeholder="ব্যাখ্যা"></div>
+            <div class="col-12 mt-3">
+                <button class="btn btn-success w-100 py-2 fw-bold" id="saveBtn" onclick="saveFormula()">Save Formula</button>
+                <button class="btn btn-secondary w-100 mt-2" onclick="closePanel()">Cancel</button>
             </div>
         </div>
     </div>
 
     <div class="table-card shadow">
         <div class="table-responsive">
-            <table class="table align-middle">
+            <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th style="width: 25%;">নাম</th>
-                        <th style="width: 50%;">সূত্র</th>
-                        <th style="width: 25%;">ব্যাখ্যা</th>
+                        <th>নাম</th>
+                        <th>সূত্র</th>
+                        <th>ব্যাখ্যা</th>
+                        <th class="no-print">Action</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody">
-                    </tbody>
+                <tbody id="tableBody"></tbody>
             </table>
         </div>
     </div>
 </div>
 
 <script>
-    let formulas = JSON.parse(localStorage.getItem('shm_final_v5')) || [
-        { name: "প্রত্যায়নী বল", formula: "\\(F = -kx\\)", desc: "k=বল ধ্রুবক" },
-        { name: "ত্বরণ", formula: "\\(a = -\\omega^2 x\\)", desc: "\\(\\omega\\)=কৌণিক কম্পাঙ্ক" },
-        { name: "পর্যায়কাল", formula: "\\(T = 2\\pi\\sqrt{\\frac{m}{k}}\\)", desc: "m=ভর" }
+    let formulas = JSON.parse(localStorage.getItem('shm_crud_v1')) || [
+        { name: "বেগ", formula: "\\(v = \\omega \\sqrt{A^2 - x^2}\\)", desc: "A=বিস্তার" }
     ];
 
     function renderTable() {
@@ -138,35 +85,69 @@
         formulas.forEach((item, index) => {
             tbody.innerHTML += `
                 <tr>
-                    <td class="fw-bold" style="color: #333; font-size: 14px;">${item.name}</td>
+                    <td class="fw-bold text-dark">${item.name}</td>
                     <td><span class="formula-text">${item.formula}</span></td>
-                    <td class="text-muted" style="font-size: 13px;">${item.desc}</td>
+                    <td class="text-muted small">${item.desc}</td>
+                    <td class="no-print">
+                        <button class="btn-action btn-edit" onclick="editFormula(${index})">Edit</button>
+                        <button class="btn-action btn-delete" onclick="deleteFormula(${index})">Del</button>
+                    </td>
                 </tr>`;
         });
-        if (window.MathJax) MathJax.typeset();
-        localStorage.setItem('shm_final_v5', JSON.stringify(formulas));
+        if (window.MathJax) MathJax.typesetPromise();
+        localStorage.setItem('shm_crud_v1', JSON.stringify(formulas));
     }
 
-    function toggleAdmin() {
-        const panel = document.getElementById('adminPanel');
-        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    function showAddPanel() {
+        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('panelTitle').innerText = "নতুন সূত্র যোগ করুন";
+        document.getElementById('editIndex').value = "";
+        clearInputs();
     }
 
-    function addFormula() {
+    function closePanel() { document.getElementById('adminPanel').style.display = 'none'; }
+
+    function clearInputs() {
+        document.getElementById('nameInput').value = '';
+        document.getElementById('formulaInput').value = '';
+        document.getElementById('descInput').value = '';
+    }
+
+    function saveFormula() {
         const name = document.getElementById('nameInput').value;
         const formula = document.getElementById('formulaInput').value;
         const desc = document.getElementById('descInput').value;
-        if(name && formula) {
+        const editIndex = document.getElementById('editIndex').value;
+
+        if(!name || !formula) return alert("তথ্য দিন!");
+
+        if (editIndex === "") {
             formulas.push({ name, formula, desc });
+        } else {
+            formulas[editIndex] = { name, formula, desc };
+        }
+
+        renderTable();
+        closePanel();
+    }
+
+    function editFormula(index) {
+        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('panelTitle').innerText = "সূত্র আপডেট করুন";
+        document.getElementById('nameInput').value = formulas[index].name;
+        document.getElementById('formulaInput').value = formulas[index].formula;
+        document.getElementById('descInput').value = formulas[index].desc;
+        document.getElementById('editIndex').value = index;
+    }
+
+    function deleteFormula(index) {
+        if(confirm("আপনি কি নিশ্চিত এটি ডিলিট করতে চান?")) {
+            formulas.splice(index, 1);
             renderTable();
-            document.getElementById('nameInput').value = '';
-            document.getElementById('formulaInput').value = '';
-            document.getElementById('descInput').value = '';
-            toggleAdmin();
         }
     }
+
     renderTable();
 </script>
-
 </body>
 </html>
